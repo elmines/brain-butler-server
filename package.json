@@ -2,8 +2,11 @@
   "name": "brain-butler-server",
   "version": "0.0.1",
   "description": "Node.js server carrying out machine learning operations for Brain Butler app",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "npx babel src/ -d dist/",
+    "prepublish": "npm run build",
+    "start": "cd dist && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -26,5 +29,12 @@
   "dependencies": {
     "ip": "^1.1.5",
     "ws": "^6.1.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.5",
+    "@babel/core": "^7.1.6",
+    "@babel/preset-flow": "^7.0.0",
+    "brain-butler-schema": "0.0.1",
+    "flow-bin": "^0.86.0"
   }
 }
