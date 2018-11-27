@@ -2,12 +2,12 @@
 const WebSocket = require("ws");
 const ip = require("ip");
 
-import type {EegEpoch, Message, Role} from "brain-butler-schema";
+import type {Command, EegEpoch, Message, Role} from "brain-butler-schema";
 
 
-const port: Number = 8080;
+const port: number = 8080;
 
-function log(role: String, message: String = "", level: String ="I")
+function log(role: string, message: string = "", level: string ="I")
 {
    if (!role) role = "UNKNOWN";
 
@@ -23,13 +23,14 @@ const wss = new WebSocket.Server({port});
 log("SERVER", `BrainButlerServer started at ws://${ip.address()}:${port}`);
 
 wss.on("connection", function connection(ws){
-  ws.on("message", function incoming(message: String){
+  ws.on("message", function incoming(message: string){
     const parsed: Message = JSON.parse(message);
-    log(parsed.role, parsed);
+    log(parsed.role, parsed.toString());
 
     if (parsed.role == "eeg")
     {
-        processEEG(parsed);
+        const eegMessage: EegEpoch = (parsed.body: EegEpoch);
+        processEEG(eegMessage);
     }
   });
 });

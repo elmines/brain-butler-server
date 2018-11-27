@@ -34,7 +34,7 @@
     "@babel/cli": "^7.1.5",
     "@babel/core": "^7.1.6",
     "@babel/preset-flow": "^7.0.0",
-    "brain-butler-schema": "0.0.1",
+    "brain-butler-schema": "git+file:/home/elmines/git/brain-butler-schema",
     "flow-bin": "^0.86.0"
   }
 }
