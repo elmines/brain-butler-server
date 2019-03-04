@@ -12,7 +12,8 @@ log(`BrainButlerServer started at ws://${ip.address()}:${port}`);
 wss.on("connection", function connection(ws){
 
   ws.on("message", function incoming(message: string){
-    const parsed = JSON.parse(message);
+    const parsed: Object = JSON.parse(message);
+    man.process(parsed);
 
   });
 });
