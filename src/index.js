@@ -1,19 +1,14 @@
 //@flow
-const WebSocket = require("ws");
 const ip = require("ip");
-const PacketManager = require("./packetManager.js");
 const log = require("./logging.js").log;
 
-const man: PacketManager = new PacketManager();
-const port: number = 8080;
-const wss = new WebSocket.Server({port});
-log(`BrainButlerServer started at ws://${ip.address()}:${port}`);
+const wsServer = require("./ws.js");
+const httpServer = require("./http.js");
 
-wss.on("connection", function connection(ws){
+const wsPort: number = 8080;
+const httpPort: number = 8079;
 
-  ws.on("message", function incoming(message: string){
-    const parsed: Object = JSON.parse(message);
-    man.process(parsed);
-
-  });
-});
+log(`WebSocket server started at ws://${ip.address()}:${wsPort}`);
+wsServer(wsPort);
+log(`HTTP server started at http://${ip.address()}:${httpPort}`);
+httpServer(httpPort);

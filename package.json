@@ -4,7 +4,7 @@
   "description": "Node.js server collecting data from Brain Butler app",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx babel src/ -d dist/",
+    "build": "npx babel src/ -d dist/ && cp src/*html dist/",
     "prepublish": "npm run build",
     "start": "cd dist && node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
