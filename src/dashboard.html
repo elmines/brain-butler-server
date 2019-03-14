@@ -1,0 +1,32 @@
+<DOCTYPE! html>
+<html>
+  <head>
+    <title>Brain Butler Server</title>
+  </head>
+  <body>
+
+    <h1>Researcher Dashboard</h1>
+
+    <h2>Problem Answer</h2>
+		<form method="POST" action="/answer">
+			<input type="hidden" name="type" value="event">
+			<input type="hidden" name="name" value="answer">
+			<input type="number" name="answer">
+			<input type="submit" value="Submit">
+		</form>
+
+    <h2>Calculation Strategy</h2>
+		<form method="POST" action="/strategy">
+			<input type="hidden" name="type" value="event">
+			<input type="hidden" name="name" value="strategy">
+			<input type="radio" name="strategy" value="factRetrieval" checked> Retrieval
+			<input type="radio" name="strategy" value="procedureUse" checked> Use
+		  <input type="radio" name="strategy" value="procedureUse" checked> Other
+			<input type="submit" value="Submit">
+		</form>
+
+    <a href="/">Home</a>
+
+
+  </body>
+</html>

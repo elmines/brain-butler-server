@@ -14,8 +14,7 @@ function httpServer(port: number = 8079) {
 	  if (req.method == "GET") {
 
       var filePath : string;
-      if (req.url === "/answer") filePath = "answer.html";
-      else if (req.url === "/method") filePath = "method.html";
+      if (req.url === "/dashboard") filePath = "dashboard.html";
       else filePath = "index.html";
 
 
@@ -26,7 +25,7 @@ function httpServer(port: number = 8079) {
 		  });
 	  }
 	  else if (req.method == "POST") {
-		  var resPath = (req.url === "/answer") ? "method.html" : "answer.html";
+		  const resPath: string = "dashboard.html";
 
 		  fs.readFile(resPath, function(err, data) {
 			  res.writeHead(200, {"Content-type": "text/html"});

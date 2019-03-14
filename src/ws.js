@@ -17,7 +17,7 @@ function wsServer(port: number = 8080) {
       man.process(packet);
 
       const event: string = packet.name;
-      const action = (event == "method") ? "displayProblem": "displayMethodPrompt";
+      const action = (event == "strategy") ? "displayProblem": "displayStrategyPrompt";
 
       ws.send(JSON.stringify({action}));
     });
