@@ -4,6 +4,7 @@ const PacketManager = require("./packetManager.js");
 import type EventEmitter from "events";
 
 const emitter: EventEmitter = require("./emitter.js");
+const log = require("./logging.js").log;
 
 const man: PacketManager = new PacketManager();
 
@@ -14,7 +15,11 @@ function wsServer(port: number = 8080) {
 
     emitter.on("submission", (packet: Object): void => {
       man.process(packet);
-      ws.send(JSON.stringify({command: "advance"}));
+
+      const event: string = packet.name;
+      const action = (event == "method") ? "displayProblem": "displayMethodPrompt";
+
+      ws.send(JSON.stringify({action}));
     });
 
     ws.on("message", function incoming(message: string){

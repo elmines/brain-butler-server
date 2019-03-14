@@ -6,6 +6,7 @@ const { parse } = require("querystring");
 import type EventEmitter from "events";
 
 const emitter = require("./emitter.js");
+const log = require("./logging.js").log;
 
 
 function httpServer(port: number = 8079) {
