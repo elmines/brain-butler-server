@@ -7,6 +7,12 @@
 
     <h1>Researcher Dashboard</h1>
 
+    <form method="POST" action="/start">
+      <input type="hidden" name="type" value="event">
+      <input type="hidden" name="name" value="startExperiment">
+      <input type="submit" value="Start Experiment">
+    </form>
+
     <h2>Problem Answer</h2>
 		<form method="POST" action="/answer">
 			<input type="hidden" name="type" value="event">
@@ -20,8 +26,8 @@
 			<input type="hidden" name="type" value="event">
 			<input type="hidden" name="name" value="strategy">
 			<input type="radio" name="strategy" value="factRetrieval" checked> Retrieval
-			<input type="radio" name="strategy" value="procedureUse" checked> Use
-		  <input type="radio" name="strategy" value="procedureUse" checked> Other
+			<input type="radio" name="strategy" value="procedureUse"> Procedural
+		  <input type="radio" name="strategy" value="other"> Other
 			<input type="submit" value="Submit">
 		</form>
 
