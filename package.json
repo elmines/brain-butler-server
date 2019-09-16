@@ -1,13 +1,13 @@
 {
+  "proxy": "http://localhost:3001/",
   "name": "brain-butler-server",
   "version": "0.0.1",
   "description": "Node.js server collecting data from Brain Butler app",
   "main": "dist/index.js",
   "scripts": {
-    "build": "./build.sh",
-    "prepublish": "npm run build",
-    "start": "cd dist && node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "webpack-dev-server --mode development --open",
+    "build": "webpack --mode production",
+    "serve": "cd server && node server.js"
   },
   "repository": {
     "type": "git",
@@ -28,12 +28,27 @@
   "homepage": "https://github.com/elmines/brain-butler-server#readme",
   "dependencies": {
     "ip": "^1.1.5",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-router": "^5.0.1",
+    "react-router-dom": "^5.0.1",
     "ws": "^6.1.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.5",
-    "@babel/core": "^7.1.6",
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
     "@babel/preset-flow": "^7.0.0",
-    "flow-bin": "^0.86.0"
+    "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.6.0",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.2.0",
+    "flow-bin": "^0.86.0",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^1.0.0",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "webpack-dev-server": "^3.8.0"
   }
 }
