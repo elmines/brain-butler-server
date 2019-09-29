@@ -1,26 +1,25 @@
-interface Message {
-  id: number;  // So Answer's can be tied back to Message's ?
-  options: object;
-  forms: Array<Form>
-};
-
-interface Form {
+export interface Form {
   title: string;
-  cat: string;
-  content: Fields;
-  options: object
+  categories: Array<Category>;
+  fields: Array<Field>;
+  meta: object
 }
 
-type Fields = Choices;
+export enum Category {
+  Choice = "Choice",
+  Text = "Text"
+}
 
-interface Choices {
+export type Field = Choice | Text;
+
+export interface Choice {
   exclusive: boolean;
+  name: string;
   labels: Array<string>;
-  values: Array<object>
+  values: Array<string>
 }
 
-
-interface Answer {
-  id: number;
-  answer: Array<string | number>; 
+export interface Text {
+  name: string;
+  label: string
 }
