@@ -10,13 +10,10 @@ function wsServer(port) {
     });
 
     wss.on("connection", ws => {
-        console.log(`Got a connection`);
-
-        ws.on("message", data => {
-            //console.log(data);
+        ws.on("message", mess => {
 
         });
-    })
+    });
 
     wss.on("close", () => {
 

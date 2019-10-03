@@ -2,6 +2,8 @@ import React from "react";
 import {Form,Choice,Category,Text} from "./schema.ts";
 
 export default function FormBody(form: Form): Array<object> {
+  if (!form || !form.categories) return [];
+
   let fieldSets = form.categories.map( (cat, i): Array<object> => {
     switch(cat) {
       case Category.Choice:

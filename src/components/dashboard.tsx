@@ -35,9 +35,10 @@ class Dashboard extends React.Component<Props, State> {
   renderForm() {
     if (this.state.waiting) return (<div>{this.waitingMessage}</div>);
 
+    const formBody = FormBody(this.form);
     return (
       <form id="dataForm" action="">
-       {FormBody(this.form)} 
+       {formBody.length ? formBody : (<p>No form for this trial</p>)} 
        <input type="button" value="Submit" onClick={() => this.onSubmit()}/>
       </form>
     );
@@ -65,6 +66,8 @@ class Dashboard extends React.Component<Props, State> {
 
   
   startExperiment() {
+    fetch("/api/start", {method: "POST"}).then( (res) => {});
+
     this.setState( (prev) => {
       this.startPolling();
       return {experimenting: true};

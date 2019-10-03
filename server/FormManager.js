@@ -8,10 +8,13 @@ class FormManager {
         wss.on("connection", ws => {
 
             ws.on("message", data => {
-                if (data.type && data.type === "form") _receiveForm(data["form"]);
+                data = JSON.parse(data);
+                if (data.type && data.type === "form") this._receiveForm(data["form"]);
             });
         });
 
+
+/*
         this.formQueue.push({
             title: "A Practice Form",
             categories: ["Choice", "Text"],
@@ -45,6 +48,11 @@ class FormManager {
                 }
             ]
         });
+        */
+    }
+
+    hasNext() {
+        return this.formQueue.length > 0;
     }
 
     nextForm() {
