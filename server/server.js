@@ -1,47 +1,48 @@
-// Node
 const ip = require("ip");
 
-// 3rd Party
 const express = require("express");
+const socket_io = require("socket.io");
 
 // Local
-const wsServer = require("./wsServer.js");
+//const wsServer = require("./wsServer.js");
 const FormManager = require("./FormManager.js");
 
+var app = express();
+var httpServer = require("http").createServer(app);
+var io = socket_io(httpServer);
 const httpPort = process.env.PORT || 3001;
-const wsPort = process.env.WS_PORT || (httpPort+1);
-const wss = wsServer(wsPort);
-const manager = new FormManager(wss)
 
-function sendAll(message) {
-  message = JSON.stringify(message);
-  wss.clients.forEach(client => {
-    client.send(message);
+const manager = new FormManager();
+
+io.on("connection", socket => {
+  socket.on("form", (form) => {
+    manager.receiveForm(form);
   });
-}
-
-const app = express();
-const static_assets = `${__dirname}/../dist/`;
+});
 
 app.use(express.json());
 
 app.post("/api/start", (req, res) => {
-  sendAll({type: "start"});
+  io.sockets.emit("start");
   res.end();
 });
 app.post("/api/end", (req, res) => {
+  manager.clear();
+  io.sockets.emit("end");
   res.end();
 });
 app.post("/api/submit", (req, res) => {
-  sendAll({type: "next"});
+  io.sockets.emit("next");
   res.end();
 });
 
 app.get("/api/form", (req, res) => {
-  res.send(JSON.stringify(manager.nextForm()));
+  res.send(JSON.stringify(manager.next()));
 });
 
+const static_assets = `${__dirname}/../dist/`;
 app.use(express.static(static_assets));
-app.listen(httpPort, () => {
+
+httpServer.listen(httpPort, () => {
   console.log(`Started listening ${ip.address()}:${httpPort}`);
 });

@@ -74,10 +74,12 @@ class Dashboard extends React.Component<Props, State> {
     });
   }
   endExperiment() {
+    this.form = null;
     this.stopPolling();
     this.setState( prev => {
-      return {experimenting: false};
+      return {experimenting: false, waiting: true};
     });
+    fetch("/api/end", {method: "POST"}).then( (res) => {});
   }
 
   startPolling() {
