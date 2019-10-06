@@ -19,36 +19,38 @@ io.on("connection", socket => {
 });
 
 subjects.on("connection", socket => {
-
   socket.on("form", form => {
     proctors.emit("form", form);
   });
-  
+
+  socket.on("end", form => {
+    socket.emit("end");
+    proctors.emit("end");
+  });
+
 });
+
 proctors.on("connection", socket => {
-  
+  socket.on("start", () => {
+    subjects.emit("start");
+  });
+  socket.on("submission", data => {
+    subjects.emit("submission", data);
+    subjects.emit("next");
+  })
+
+  socket.on("end", () => {
+    socket.emit("end");
+    subjects.emit("end");
+  });
+
 });
 
 app.use(express.json());
-
-app.post("/api/start", (req, res) => {
-  subjects.emit("start");
-  proctors.emit("start");
-  res.end();
-});
-app.post("/api/end", (req, res) => {
-  subjects.emit("end");
-  proctors.emit("end");
-  res.end();
-});
-app.post("/api/submit", (req, res) => {
-  subjects.emit("next");
-  res.end();
-});
 
 const static_assets = `${__dirname}/../dist/`;
 app.use(express.static(static_assets));
 
 httpServer.listen(httpPort, () => {
-  console.log(`Started listening ${ip.address()}:${httpPort}`);
+  console.log(`Started listening at ${ip.address()}:${httpPort}`);
 });

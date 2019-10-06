@@ -21,10 +21,18 @@ class Dashboard extends React.Component<Props, State> {
     this.socket = socket_io("/proctors");
 
     this.socket.on("form", form => {
-      console.log("Got a form");
       this.setState( (prev) => {
         this.form = form;
         return {waiting: false};
+      });
+    });
+
+    this.socket.on("end", () => {
+      if (!this.state.experimenting) return;
+
+      this.form = null;
+      this.setState( prev => {
+        return {experimenting: false, waiting: true};
       });
     });
 
@@ -40,7 +48,7 @@ class Dashboard extends React.Component<Props, State> {
     return (
       <div>
         {this.renderForm()}
-        <button onClick={() => this.endExperiment()}>End</button>
+        <button onClick={() => {this.socket.emit("end") } }>End</button>
       </div>
     );
   }
@@ -61,15 +69,7 @@ class Dashboard extends React.Component<Props, State> {
     const formElement = document.forms.dataForm;
     const formData = new FormData(formElement);
     const json = toJSON(formData);
-    const body = JSON.stringify(json);
-
-    fetch("/api/submit", {
-      method: "POST",
-      headers: {
-        "Content-type": "application/json"
-      },
-      body
-    }).then(res => {});
+    this.socket.emit("submission", json);
 
     this.setState( (prev) => {
       return {waiting: true};
@@ -78,18 +78,10 @@ class Dashboard extends React.Component<Props, State> {
 
   
   startExperiment() {
-    fetch("/api/start", {method: "POST"}).then( (res) => {});
-
+    this.socket.emit("start");
     this.setState( (prev) => {
       return {experimenting: true};
     });
-  }
-  endExperiment() {
-    this.form = null;
-    this.setState( prev => {
-      return {experimenting: false, waiting: true};
-    });
-    fetch("/api/end", {method: "POST"}).then( (res) => {});
   }
 
 }
