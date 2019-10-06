@@ -1,6 +1,8 @@
 import React from "react";
 import FormBody from "./FormBody.tsx";
 
+import socket_io from "socket.io-client";
+
 
 type Props = {};
 type State = {waiting: boolean; experimenting: boolean };
@@ -15,6 +17,17 @@ class Dashboard extends React.Component<Props, State> {
     this.waitingMessage = (<p>Waiting. . .</p>);
     this.state = {waiting: true, experimenting: false};
     this.form = "Empty form";
+
+    this.socket = socket_io("/proctors");
+
+    this.socket.on("form", form => {
+      console.log("Got a form");
+      this.setState( (prev) => {
+        this.form = form;
+        return {waiting: false};
+      });
+    });
+
   }
   render() {
     if (!this.state.experimenting)
@@ -58,7 +71,6 @@ class Dashboard extends React.Component<Props, State> {
       body
     }).then(res => {});
 
-    this.startPolling();
     this.setState( (prev) => {
       return {waiting: true};
     });
@@ -69,42 +81,17 @@ class Dashboard extends React.Component<Props, State> {
     fetch("/api/start", {method: "POST"}).then( (res) => {});
 
     this.setState( (prev) => {
-      this.startPolling();
       return {experimenting: true};
     });
   }
   endExperiment() {
     this.form = null;
-    this.stopPolling();
     this.setState( prev => {
       return {experimenting: false, waiting: true};
     });
     fetch("/api/end", {method: "POST"}).then( (res) => {});
   }
 
-  startPolling() {
-    this.callbackId = setInterval(() => this.pollServer(), 500);
-  }
-  stopPolling() {
-    if (this.callbackId) {
-      clearInterval(this.callbackId);
-      this.callbackId = null;
-    }
-  }
-  receiveForm(form) {
-    this.stopPolling();
-    this.setState( (prev) => {
-      this.form = form;
-      return {waiting: false};
-    });
-  }
-
-  async pollServer() {
-    console.log("Polling...");
-    const response = await fetch("/api/form");
-    const form = await response.json();
-    if (form.fields) this.receiveForm(form);
-  }
 }
 
 function toJSON(formData: FormData) {

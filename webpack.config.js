@@ -1,5 +1,7 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
+const backendUri = `http://localhost:${process.env.PORT || 3001}`;
+
 module.exports = {
   module: {
     rules: [
@@ -27,7 +29,11 @@ module.exports = {
   devServer: {
     port: 3000,
     proxy: {
-      "/": `http://localhost:${process.env.PORT || 3001}`
+      "/socket.io": {
+        target: backendUri,
+        ws: true
+      },
+      "/": backendUri,
     }
   }
 };

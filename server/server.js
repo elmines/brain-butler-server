@@ -4,40 +4,46 @@ const express = require("express");
 const socket_io = require("socket.io");
 
 // Local
-//const wsServer = require("./wsServer.js");
-const FormManager = require("./FormManager.js");
 
 var app = express();
 var httpServer = require("http").createServer(app);
-var io = socket_io(httpServer);
 const httpPort = process.env.PORT || 3001;
 
-const manager = new FormManager();
+var io = socket_io(httpServer);
+
+var subjects = io.of("/subjects");
+var proctors = io.of("/proctors");
 
 io.on("connection", socket => {
-  socket.on("form", (form) => {
-    manager.receiveForm(form);
+
+});
+
+subjects.on("connection", socket => {
+
+  socket.on("form", form => {
+    proctors.emit("form", form);
   });
+  
+});
+proctors.on("connection", socket => {
+  
 });
 
 app.use(express.json());
 
 app.post("/api/start", (req, res) => {
-  io.sockets.emit("start");
+  subjects.emit("start");
+  proctors.emit("start");
   res.end();
 });
 app.post("/api/end", (req, res) => {
-  manager.clear();
-  io.sockets.emit("end");
+  subjects.emit("end");
+  proctors.emit("end");
   res.end();
 });
 app.post("/api/submit", (req, res) => {
-  io.sockets.emit("next");
+  subjects.emit("next");
   res.end();
-});
-
-app.get("/api/form", (req, res) => {
-  res.send(JSON.stringify(manager.next()));
 });
 
 const static_assets = `${__dirname}/../dist/`;
