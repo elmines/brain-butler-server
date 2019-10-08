@@ -1,16 +1,30 @@
+const path = require("path");
+const fs = require("fs");
+
 const ip = require("ip");
 
 const express = require("express");
 const socket_io = require("socket.io");
 
-// Local
 
 var app = express();
 var httpServer = require("http").createServer(app);
 const httpPort = process.env.PORT || 3001;
+const outDir = path.normalize(process.env.OUT_DIR || "../out");
+
+var history = [];
+function recordEvent(data) { history.push(data); }
+function clearHistory() { history = []; }
+function writeHistory(path) {
+  const json_string = JSON.stringify(history, null, 2);
+  fs.writeFile(path, json_string, err => {
+    if (err) console.error(`Unable to write ${path}`);
+    else     console.error(`Wrote ${path}`);
+    clearHistory();
+  });
+}
 
 var io = socket_io(httpServer);
-
 var subjects = io.of("/subjects");
 var proctors = io.of("/proctors");
 
@@ -24,6 +38,7 @@ subjects.on("connection", socket => {
   });
 
   socket.on("end", form => {
+    writeHistory(path.join(outDir,`${Date.now()}_history.json`));
     socket.emit("end");
     proctors.emit("end");
   });
@@ -35,6 +50,8 @@ proctors.on("connection", socket => {
     subjects.emit("start");
   });
   socket.on("submission", data => {
+    recordEvent(data);
+
     subjects.emit("submission", data);
     subjects.emit("next");
   })
