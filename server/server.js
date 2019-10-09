@@ -15,11 +15,14 @@ const outDir = path.normalize(process.env.OUT_DIR || "../out");
 var history = [];
 function recordEvent(data) { history.push(data); }
 function clearHistory() { history = []; }
-function writeHistory(path) {
+function writeHistory() {
+  const timestamp = Date.now();
+  recordEvent({type:"end", timestamp});
+  const out_path = path.join(outDir,`${timestamp}_history.json`);
   const json_string = JSON.stringify(history, null, 2);
-  fs.writeFile(path, json_string, err => {
+  fs.writeFile(out_path, json_string, err => {
     if (err) console.error(`Unable to write ${path}`);
-    else     console.error(`Wrote ${path}`);
+    else     console.error(`Wrote ${out_path}`);
     clearHistory();
   });
 }
@@ -37,8 +40,12 @@ subjects.on("connection", socket => {
     proctors.emit("form", form);
   });
 
+  socket.on("event", event => {
+    recordEvent(event);
+  });
+
   socket.on("end", form => {
-    writeHistory(path.join(outDir,`${Date.now()}_history.json`));
+    writeHistory();
     socket.emit("end");
     proctors.emit("end");
   });
@@ -46,9 +53,12 @@ subjects.on("connection", socket => {
 });
 
 proctors.on("connection", socket => {
+
   socket.on("start", () => {
     subjects.emit("start");
+    recordEvent({type:"start", timestamp:Date.now() });
   });
+
   socket.on("submission", data => {
     recordEvent(data);
 
@@ -57,6 +67,7 @@ proctors.on("connection", socket => {
   })
 
   socket.on("end", () => {
+    writeHistory();
     socket.emit("end");
     subjects.emit("end");
   });

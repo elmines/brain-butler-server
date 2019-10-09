@@ -9,6 +9,7 @@ type State = {waiting: boolean; experimenting: boolean };
 class Dashboard extends React.Component<Props, State> {
   state: State;
   form: any;
+  socket: any;
   waitingMessage: any;
   callbackId: Timeout;
 
@@ -68,8 +69,10 @@ class Dashboard extends React.Component<Props, State> {
   onSubmit() {
     const formElement = document.forms.dataForm;
     const formData = new FormData(formElement);
-    const json = toJSON(formData);
-    this.socket.emit("submission", json);
+    const submission = toJSON(formData);
+    submission.type = "submission";
+    submission.timestamp = Date.now();
+    this.socket.emit("submission", submission);
 
     this.setState( (prev) => {
       return {waiting: true};
