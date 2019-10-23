@@ -5,7 +5,7 @@ import socket_io from "socket.io-client";
 
 
 type Props = {};
-type State = {waiting: boolean; experimenting: boolean };
+type State = {waiting: boolean; experimenting: boolean, forms: Array<object> };
 class Dashboard extends React.Component<Props, State> {
   state: State;
   form: any;
@@ -16,28 +16,41 @@ class Dashboard extends React.Component<Props, State> {
   constructor(props) {
     super(props);
     this.waitingMessage = (<p>Waiting. . .</p>);
-    this.state = {waiting: true, experimenting: false};
-    this.form = "Empty form";
 
     this.socket = socket_io("/proctors");
 
+    this.state = {forms: [], waiting: true, experimenting: false};
+    this.nextId = 0;
+    this.formIds = [];
+
     this.socket.on("form", form => {
       this.setState( (prev) => {
-        this.form = form;
-        return {waiting: false};
+        this.formIds.push(this.nextId++);
+        return {
+          waiting: false,
+          forms: [...this.state.forms, form]
+        };
       });
     });
 
     this.socket.on("end", () => {
-      if (!this.state.experimenting) return;
+      if (this.state.forms.length > 0) return;
 
-      this.form = null;
-      this.setState( prev => {
-        return {experimenting: false, waiting: true};
+      this.nextId = 0;
+      this.setState(prev => {
+        return {
+          waiting: true, experimenting: false
+        };
       });
     });
 
+    this.keyCallback = (event) => {this.onKeydown(event)};
+    document.addEventListener("keydown",this.keyCallback);
   }
+  componentWillUnmount() {
+    document.removeEventListener("keydown", this.keyCallback);
+  }
+
   render() {
     if (!this.state.experimenting)
       return (
@@ -48,35 +61,61 @@ class Dashboard extends React.Component<Props, State> {
 
     return (
       <div>
-        {this.renderForm()}
+        {this.state.waiting ? (<div>{this.waitingMessage}</div>) : this.renderForms()}
         <button onClick={() => {this.socket.emit("end") } }>End</button>
       </div>
     );
   }
 
-  renderForm() {
-    if (this.state.waiting) return (<div>{this.waitingMessage}</div>);
+  renderForms() {
+    const forms = this.state.forms.map((form,i) => this.renderForm(FormBody(form), this.formIds[i]));
+    return (<div>{forms}</div>);
+  }
 
-    const formBody = FormBody(this.form);
+  renderForm(formBody, id) {
     return (
-      <form id="dataForm" action="">
+      <form id={id} action="">
        {formBody.length ? formBody : (<p>No form for this trial</p>)} 
-       <input type="button" value="Submit" onClick={() => this.onSubmit()}/>
+       <input type="button" value="Submit" onClick={() => this.onSubmit(id)}/>
+       <input type="button" value="Skip" onClick={() => this.onSkip()}/>
       </form>
     );
   }
 
-  onSubmit() {
-    const formElement = document.forms.dataForm;
-    const formData = new FormData(formElement);
-    const submission = toJSON(formData);
-    submission.type = "submission";
-    submission.timestamp = Date.now();
-    this.socket.emit("submission", submission);
+  onKeydown(e) {
+    if (e.code === "Enter")
+      console.log("Someone pressed <Enter>");
+  }
 
-    this.setState( (prev) => {
-      return {waiting: true};
+  removeForm(id) {
+    const formInd = this.formIds.indexOf(id);
+    this.formIds.splice(formInd,1);
+    this.setState(prev => {
+      let forms = this.state.forms.slice();
+      forms.splice(formInd,1);
+      const waiting = forms.length === 0;
+      return {forms,waiting}
     });
+  }
+
+  onSkip(id) {
+    let submission = {type: "submission", timestamp: Date.now()}
+    this.socket.emit("submission", submission);
+    this.removeForm(id);
+    return false;
+  }
+
+  onSubmit(id) {
+    const formElement = document.forms[id];
+    const formData = new FormData(formElement);
+    const submission = {
+      ...toJSON(formData),
+      type: "submission",
+      timestamp: Date.now()
+    };
+    this.socket.emit("submission", submission);
+    this.removeForm(id);
+    return false;
   }
 
   
