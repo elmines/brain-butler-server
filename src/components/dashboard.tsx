@@ -5,10 +5,17 @@ import socket_io from "socket.io-client";
 
 
 type Props = {};
-type State = {waiting: boolean; experimenting: boolean, forms: Array<object> };
+type State = {
+  waiting: boolean,
+  experimenting: boolean,
+  forms: Array<object>,
+  constantForms: Array<object>
+};
 class Dashboard extends React.Component<Props, State> {
   state: State;
   form: any;
+  formIds: {constant: Array<string>, trial: Array<string>};
+  nextId: Number;
   socket: any;
   waitingMessage: any;
   callbackId: Timeout;
@@ -19,17 +26,33 @@ class Dashboard extends React.Component<Props, State> {
 
     this.socket = socket_io("/proctors");
 
-    this.state = {forms: [], waiting: true, experimenting: false};
+    this.state = {
+      forms: [],
+      constantForms: [],
+      waiting: true,
+      experimenting: false
+    };
     this.nextId = 0;
-    this.formIds = [];
+    this.formIds = {constant: [], trial: []};
 
     this.socket.on("form", form => {
       this.setState( (prev) => {
-        this.formIds.push(this.nextId++);
-        return {
-          waiting: false,
-          forms: [...this.state.forms, form]
-        };
+
+        let forms = this.state.forms;
+        let constantForms = this.state.constantForms;
+        let waiting;
+        const formId =  `Form${this.nextId++}`;
+        if (form.hasOwnProperty("constant") && form.constant) {
+          constantForms.push(form);
+          this.formIds.constant.push(formId);
+          waiting = prev.waiting;
+        }
+        else {
+          forms.push(form);
+          this.formIds.trial.push(formId);
+          waiting = false;
+        }
+        return {waiting, constantForms, forms};
       });
     });
 
@@ -54,32 +77,67 @@ class Dashboard extends React.Component<Props, State> {
   render() {
     if (!this.state.experimenting)
       return (
-        <div>
           <button onClick={() => this.startExperiment()}>Start</button>
-        </div>
       );
 
     return (
       <div>
-        {this.state.waiting ? (<div>{this.waitingMessage}</div>) : this.renderForms()}
+        <h2>Trial Events</h2>
+        {this.state.waiting ?
+          this.waitingMessage :
+          this.renderFormSet(this.state.forms, this.formIds.trial, false)
+        }
+        <br/>
         <button onClick={() => {this.socket.emit("end") } }>End</button>
+
+        <h2>Other Events</h2>
+
+        {this.renderFormSet(this.state.constantForms, this.formIds.constant, true)}
       </div>
     );
   }
 
-  renderForms() {
-    const forms = this.state.forms.map((form,i) => this.renderForm(FormBody(form), this.formIds[i]));
-    return (<div>{forms}</div>);
+  renderFormSet(formSet, formIds, isStatic) {
+    if (isStatic === undefined) isStatic = false;
+    const forms = formSet.map((form,i) => {
+      return this.renderForm(FormBody(form), formIds[i], isStatic);
+    });
+    return forms;
   }
 
-  renderForm(formBody, id) {
+  renderForm(formBody, id, isStatic) {
+    if (isStatic === undefined) isStatic = false;
+
     return (
       <form id={id} action="">
-       {formBody.length ? formBody : (<p>No form for this trial</p>)} 
-       <input type="button" value="Submit" onClick={() => this.onSubmit(id)}/>
-       <input type="button" value="Skip" onClick={() => this.onSkip()}/>
+        {formBody.length ? formBody : (<p>No form for this trial</p>)} 
+        <br/>
+        <input type="button" value="Submit" onClick={() => this.onSubmit(id, !isStatic)}/>
+        { isStatic ? "" :
+          <input type="button" value="Skip" onClick={() => this.onSkip(id, true)}/>
+        }
       </form>
     );
+  }
+
+  onSkip(id, remove) {
+    let submission = {type: "skipForm", timestamp: Date.now()}
+    this.socket.emit("submission", submission);
+    if (remove) this.removeForm(id);
+    return false;
+  }
+
+  onSubmit(id, remove) {
+    const formElement = document.forms[id.toString()];
+    const formData = new FormData(formElement);
+    const submission = {
+      ...toJSON(formData),
+      type: "submission",
+      timestamp: Date.now()
+    };
+    this.socket.emit("submission", submission);
+    if (remove) this.removeForm(id);
+    return false;
   }
 
   onKeydown(e) {
@@ -88,34 +146,29 @@ class Dashboard extends React.Component<Props, State> {
   }
 
   removeForm(id) {
-    const formInd = this.formIds.indexOf(id);
-    this.formIds.splice(formInd,1);
-    this.setState(prev => {
-      let forms = this.state.forms.slice();
+    let formInd = this.formIds.trial.indexOf(id);
+    let constantForms;
+    let forms;
+
+    if (formInd < 0) {
+      formInd = this.formIds.constant.indexOf(id);
+      constantForms = this.state.constantForms.slice();
+      constantForms.splice(formInd,1); 
+      this.formIds.constant.splice(formInd, 1);
+      forms = this.state.forms;
+    }
+    else {
+      forms = this.state.forms.slice();
       forms.splice(formInd,1);
+      this.formIds.trial.splice(formInd,1);
+      constantForms = this.state.constantForms;
+    }
+
+    this.setState(prev => {
       const waiting = forms.length === 0;
-      return {forms,waiting}
+      return {constantForms,forms,waiting}
     });
-  }
 
-  onSkip(id) {
-    let submission = {type: "submission", timestamp: Date.now()}
-    this.socket.emit("submission", submission);
-    this.removeForm(id);
-    return false;
-  }
-
-  onSubmit(id) {
-    const formElement = document.forms[id];
-    const formData = new FormData(formElement);
-    const submission = {
-      ...toJSON(formData),
-      type: "submission",
-      timestamp: Date.now()
-    };
-    this.socket.emit("submission", submission);
-    this.removeForm(id);
-    return false;
   }
 
   

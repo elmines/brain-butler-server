@@ -14,7 +14,7 @@ export default function FormBody(form: Form): Array<object> {
         return [<p>Bad Form Field Type</p>];
     }
   });
-  fieldSets = fieldSets.map(set => (<div>{set}</div>) );
+  //fieldSets = fieldSets.map(set => (<div>{set}</div>) );
   return fieldSets;
 }
 
