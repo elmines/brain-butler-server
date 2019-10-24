@@ -45,9 +45,6 @@ subjects.on("connection", socket => {
   });
 
   socket.on("end", form => {
-    writeHistory();
-    socket.emit("end");
-    proctors.emit("end");
   });
 
 });
@@ -68,7 +65,7 @@ proctors.on("connection", socket => {
 
   socket.on("end", () => {
     writeHistory();
-    socket.emit("end");
+    proctors.emit("end");
     subjects.emit("end");
   });
 

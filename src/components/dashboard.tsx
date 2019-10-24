@@ -58,13 +58,7 @@ class Dashboard extends React.Component<Props, State> {
 
     this.socket.on("end", () => {
       if (this.state.forms.length > 0) return;
-
-      this.nextId = 0;
-      this.setState(prev => {
-        return {
-          waiting: true, experimenting: false
-        };
-      });
+      this.endExperiment();
     });
 
     this.keyCallback = (event) => {this.onKeydown(event)};
@@ -140,6 +134,17 @@ class Dashboard extends React.Component<Props, State> {
     return false;
   }
 
+  endExperiment() {
+    this.nextId = 0;
+    this.setState(prev => {
+      this.formIds = {constant: [], trial: []};
+      return {
+        waiting: true, experimenting: false,
+        forms: [], constantForms: []
+      };
+    });
+  }
+
   onKeydown(e) {
     if (e.code === "Enter")
       console.log("Someone pressed <Enter>");
@@ -174,6 +179,7 @@ class Dashboard extends React.Component<Props, State> {
   
   startExperiment() {
     this.socket.emit("start");
+    //this.ending = false;
     this.setState( (prev) => {
       return {experimenting: true};
     });
