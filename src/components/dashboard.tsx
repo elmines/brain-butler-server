@@ -94,16 +94,18 @@ class Dashboard extends React.Component<Props, State> {
   renderFormSet(formSet, formIds, isStatic) {
     if (isStatic === undefined) isStatic = false;
     const forms = formSet.map((form,i) => {
-      return this.renderForm(FormBody(form), formIds[i], isStatic);
+      return this.renderForm(form, formIds[i], isStatic);
     });
     return forms;
   }
 
-  renderForm(formBody, id, isStatic) {
+  renderForm(form, id, isStatic) {
     if (isStatic === undefined) isStatic = false;
+    const formBody = FormBody(form);
 
     return (
       <form id={id} action="">
+        <h3>{form.title}</h3>
         {formBody.length ? formBody : (<p>No form for this trial</p>)} 
         <br/>
         <input type="button" value="Submit" onClick={() => this.onSubmit(id, !isStatic)}/>
