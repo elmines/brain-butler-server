@@ -3,11 +3,11 @@ import FormBody from "./FormBody.tsx";
 
 import socket_io from "socket.io-client";
 
+enum ExpState {HOME, PAUSE, ACTIVE}
 
 type Props = {};
 type State = {
-  waiting: boolean,
-  experimenting: boolean,
+  expState: ExpState
   forms: Array<object>,
   constantForms: Array<object>
 };
@@ -26,12 +26,7 @@ class Dashboard extends React.Component<Props, State> {
 
     this.socket = socket_io("/proctors");
 
-    this.state = {
-      forms: [],
-      constantForms: [],
-      waiting: true,
-      experimenting: false
-    };
+    this.state = {forms: [], constantForms: [], expState: ExpState.HOME};
     this.nextId = 0;
     this.formIds = {constant: [], trial: []};
 
@@ -40,25 +35,28 @@ class Dashboard extends React.Component<Props, State> {
 
         let forms = this.state.forms;
         let constantForms = this.state.constantForms;
-        let waiting;
         const formId =  `Form${this.nextId++}`;
         if (form.hasOwnProperty("constant") && form.constant) {
           constantForms.push(form);
           this.formIds.constant.push(formId);
-          waiting = prev.waiting;
         }
         else {
           forms.push(form);
           this.formIds.trial.push(formId);
-          waiting = false;
         }
-        return {waiting, constantForms, forms};
+        return {constantForms, forms};
       });
     });
 
     this.socket.on("end", () => {
       if (this.state.forms.length > 0) return;
       this.endExperiment();
+    });
+    this.socket.on("continue", () => {
+      this.setState(prev => {return {expState: ExpState.ACTIVE} });
+    });
+    this.socket.on("pause", () => {
+      this.setState(prev => {return {expState: ExpState.PAUSE} });
     });
 
     this.keyCallback = (event) => {this.onKeydown(event)};
@@ -69,26 +67,42 @@ class Dashboard extends React.Component<Props, State> {
   }
 
   render() {
-    if (!this.state.experimenting)
-      return (
-          <button onClick={() => this.startExperiment()}>Start</button>
-      );
+    switch(this.state.expState) {
+      case ExpState.HOME:   return this._renderHome();
+      case ExpState.ACTIVE: return this._renderActive();
+      case ExpState.PAUSE:  return this._renderPaused();
+      default:              return ("Invalid state");
+    }
+  }
 
+  _renderHome() {
+    return (
+      <div>
+        <button onClick={() => this.startExperiment()}>Start</button>
+      </div>
+    )
+  }
+  _renderActive() {return this.__renderExperimenting(false);}
+  _renderPaused() {return this.__renderExperimenting(true);}
+  __renderExperimenting(pause = false) {
     return (
       <div>
         <h2>Trial Events</h2>
-        {this.state.waiting ?
-          this.waitingMessage :
-          this.renderFormSet(this.state.forms, this.formIds.trial, false)
-        }
+          {this.renderFormSet(this.state.forms, this.formIds.trial, false)}
+          {pause ?
+            <button onClick={() => {this.socket.emit("continue")}}>Continue</button>
+            : <button onClick={() => {this.socket.emit("pause")}}>Pause</button>
+          }
+          {pause ? 
+            <button onClick={() => {this.socket.emit("end") } }>End</button>
+            : ""
+          }
         <br/>
-        <button onClick={() => {this.socket.emit("end") } }>End</button>
-
         <h2>Other Events</h2>
-
         {this.renderFormSet(this.state.constantForms, this.formIds.constant, true)}
       </div>
     );
+
   }
 
   renderFormSet(formSet, formIds, isStatic) {
@@ -141,7 +155,7 @@ class Dashboard extends React.Component<Props, State> {
     this.setState(prev => {
       this.formIds = {constant: [], trial: []};
       return {
-        waiting: true, experimenting: false,
+        expState: ExpState.HOME,
         forms: [], constantForms: []
       };
     });
@@ -181,10 +195,7 @@ class Dashboard extends React.Component<Props, State> {
   
   startExperiment() {
     this.socket.emit("start");
-    //this.ending = false;
-    this.setState( (prev) => {
-      return {experimenting: true};
-    });
+    this.setState( (prev) => { return {expState: ExpState.ACTIVE} });
   }
 
 }

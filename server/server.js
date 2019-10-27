@@ -69,6 +69,18 @@ proctors.on("connection", socket => {
     subjects.emit("end");
   });
 
+  socket.on("continue", () => {
+    recordEvent({type: "continue", timestamp: Date.now()});
+    proctors.emit("continue");
+    subjects.emit("continue");
+  })
+
+  socket.on("pause", () => {
+    recordEvent({type: "requestPause", timestamp: Date.now()});
+    proctors.emit("pause");
+    subjects.emit("pause");
+  });
+
 });
 
 app.use(express.json());
