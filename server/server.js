@@ -12,24 +12,71 @@ var httpServer = require("http").createServer(app);
 const httpPort = process.env.PORT || 3001;
 const outDir = path.normalize(process.env.OUT_DIR || "../out");
 
-var history = [];
-function recordEvent(data) { history.push(data); }
-function clearHistory() { history = []; }
+class History {
+  constructor() {
+    this.path = path.join(outDir,`${Date.now()}_history.json`);
+    this.fd = fs.openSync(this.path, "a");
+    this.history = [];
+    this.bufferLim = 50;
+    this.empty = true;
+
+    fs.appendFile(this.fd, "[", err => {});
+  }
+
+  record(datum) {
+    this.history.push(datum);
+    if (this.history.length > this.bufferLim) this.flush();
+  }
+
+  flush() {
+    if (this.history.length < 1) return;
+
+    let json = JSON.stringify(this.history, null, 2);
+    json = json.substring(1, json.length - 1);
+
+    let toWrite = "\n" + json;
+    if (this.empty) this.empty = false;
+    else            toWrite = "," + toWrite;
+
+    fs.appendFile(this.fd, toWrite, err => {
+      if (err) {
+        console.log(`Error writing to ${this.path}`);
+        return;
+      }
+      console.log(`Flushed ${toWrite.length} bytes to ${this.path}`);
+    });
+    this.history = [];
+  }
+
+  close() {
+    this.flush();
+    fs.appendFile(this.fd, "\n]", err => {
+      if (err) {
+        console.log(`Error writing to ${this.path}`);
+        return;
+      }
+      console.log(`Wrote ${this.path}`);
+    });
+  }
+}
+
+var hist = new History();
 function writeHistory() {
   const timestamp = Date.now();
-  recordEvent({type:"end", timestamp});
-  const out_path = path.join(outDir,`${timestamp}_history.json`);
-  const json_string = JSON.stringify(history, null, 2);
-  fs.writeFile(out_path, json_string, err => {
-    if (err) console.error(`Unable to write ${path}`);
-    else     console.error(`Wrote ${out_path}`);
-    clearHistory();
-  });
+  hist.record({type:"end", timestamp});
+  hist.close();
+  hist = new History();
 }
 
 var io = socket_io(httpServer);
 var subjects = io.of("/subjects");
 var proctors = io.of("/proctors");
+
+function onPause() {
+  hist.record({type: "requestPause", timestamp: Date.now()});
+  proctors.emit("pause");
+  subjects.emit("pause");
+}
 
 io.on("connection", socket => {
 
@@ -41,11 +88,13 @@ subjects.on("connection", socket => {
   });
 
   socket.on("event", event => {
-    recordEvent(event);
+    hist.record(event);
   });
 
   socket.on("end", form => {
   });
+
+  socket.on("pause",onPause);
 
 });
 
@@ -53,11 +102,11 @@ proctors.on("connection", socket => {
 
   socket.on("start", () => {
     subjects.emit("start");
-    recordEvent({type:"start", timestamp:Date.now() });
+    hist.record({type:"start", timestamp:Date.now() });
   });
 
   socket.on("submission", data => {
-    recordEvent(data);
+    hist.record(data);
 
     subjects.emit("submission", data);
     subjects.emit("next");
@@ -70,16 +119,12 @@ proctors.on("connection", socket => {
   });
 
   socket.on("continue", () => {
-    recordEvent({type: "continue", timestamp: Date.now()});
+    hist.record({type: "continue", timestamp: Date.now()});
     proctors.emit("continue");
     subjects.emit("continue");
   })
 
-  socket.on("pause", () => {
-    recordEvent({type: "requestPause", timestamp: Date.now()});
-    proctors.emit("pause");
-    subjects.emit("pause");
-  });
+  socket.on("pause", onPause);
 
 });
 
